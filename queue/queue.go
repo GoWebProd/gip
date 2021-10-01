@@ -15,14 +15,13 @@ type Queue[T any] struct {
 	tail  *node[T]
 }
 
-func New[T any]() *Queue[T] {
+func New[T any]() Queue[T] {
 	node := &node[T]{}
-	q := &Queue[T]{
+
+	return Queue[T]{
 		dummy: node,
 		tail:  node,
 	}
-
-	return q
 }
 
 func (q *Queue[T]) Put(v *T) {
