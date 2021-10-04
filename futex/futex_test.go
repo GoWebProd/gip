@@ -12,8 +12,6 @@ func TestFutex(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 
 		value = 2
-
-		Wake(&value, 1)
 	}()
 
 	Sleep(&value, 0, -1)
