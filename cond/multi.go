@@ -24,6 +24,13 @@ type Multi struct {
 	mu      sync.Mutex
 }
 
+func (c *Multi) park(p1, p2 unsafe.Pointer) bool {
+	c.waiters.PushUnlocked(p1)
+	c.mu.Unlock()
+
+	return true
+}
+
 func (c *Multi) Wait() {
 	c.mu.Lock()
 
@@ -33,12 +40,7 @@ func (c *Multi) Wait() {
 		return
 	}
 
-	rtime.GoPark(func(p1, p2 unsafe.Pointer) bool {
-		c.waiters.PushUnlocked(p1)
-		c.mu.Unlock()
-
-		return true
-	}, unsafe.Pointer(&c.mu), 0, 0, 1)
+	rtime.GoPark(c.park, unsafe.Pointer(&c.mu), 0, 0, 1)
 }
 
 func (c *Multi) Done() {
