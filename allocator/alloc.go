@@ -16,7 +16,7 @@ import (
 func throw(s string)
 
 func Alloc(size int) []byte {
-	ptr := C.malloc(C.size_t(size))
+	ptr := C.mallocx(C.size_t(size), 0x40)
 	if ptr == nil {
 		throw("out of memory")
 	}
@@ -36,7 +36,7 @@ func AllocObject[T any]() *T {
 
 	size := unsafe.Sizeof(obj)
 
-	ptr := C.malloc(C.size_t(size))
+	ptr := C.mallocx(C.size_t(size), 0x40)
 	if ptr == nil {
 		throw("out of memory")
 	}
