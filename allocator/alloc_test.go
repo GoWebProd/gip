@@ -30,6 +30,28 @@ func TestAlloc(t *testing.T) {
 	Free(data)
 }
 
+func TestReallocEmpty(t *testing.T) {
+	var data []byte
+
+	data = nil
+
+	Realloc(&data, 1024)
+
+	if len(data) != 0 || cap(data) != 1024 {
+		t.Fatalf("bad reallocated slice %d:%d", len(data), cap(data))
+	}
+}
+
+func TestRealloc(t *testing.T) {
+	data := Alloc(128)
+
+	Realloc(&data, 1024)
+
+	if len(data) != 128 || cap(data) != 1024 {
+		t.Fatalf("bad reallocated slice %d:%d", len(data), cap(data))
+	}
+}
+
 func TestAllocObject(t *testing.T) {
 	type testStruct struct {
 		A int  `json:"a"`

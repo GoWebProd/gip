@@ -31,6 +31,23 @@ func Alloc(size int) []byte {
 	return data
 }
 
+func Realloc(data *[]byte, size int) {
+	h := (*reflect.SliceHeader)(unsafe.Pointer(data))
+	if h.Cap == 0 {
+		*data = Alloc(size)[:0]
+
+		return
+	}
+
+	ptr := C.rallocx(unsafe.Pointer(h.Data), C.size_t(size), 0x40)
+	if ptr == nil {
+		throw("out of memory")
+	}
+
+	h.Data = uintptr(ptr)
+	h.Cap = size
+}
+
 func AllocObject[T any]() *T {
 	var obj T
 

@@ -3,6 +3,7 @@ package fasttime
 import (
 	"testing"
 	"time"
+	"unsafe"
 )
 
 func BenchmarkMyNow(b *testing.B) {
@@ -108,5 +109,21 @@ func TestDate(t *testing.T) {
 	}
 	if int64(d1) != d2 {
 		t.Fatal("day:", d1, d2)
+	}
+}
+
+func TestTime(t *testing.T) {
+	t1 := time.Now().UnixNano()
+	now := NowNano()
+
+	type time struct {
+		wall uint64
+		ext  int64
+	}
+
+	t2 := (*time)(unsafe.Pointer(&t1))
+
+	if t2.ext-now > 1000 {
+		t.Fatalf("now: %d, wall: %d", now, t2.wall)
 	}
 }
