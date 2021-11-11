@@ -3,9 +3,9 @@ package allocator
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAlloc(t *testing.T) {
@@ -76,27 +76,27 @@ func TestAllocObject(t *testing.T) {
 }
 
 func BenchmarkJemalloc(b *testing.B) {
-	type testStruct struct {
-		A int  `json:"a"`
-		B bool `json:"b"`
-	}
+	assert := assert.New(b)
 
 	for i := 0; i < b.N; i++ {
-		obj := AllocObject[testStruct]()
+		a := AllocObject[testStruct]()
 
-		fmt.Fprintf(ioutil.Discard, "%+v", obj)
-		FreeObject(obj)
+		assert.NotNil(a)
+
+		FreeObject(a)
 	}
 }
 func BenchmarkNew(b *testing.B) {
-	type testStruct struct {
-		A int  `json:"a"`
-		B bool `json:"b"`
-	}
+	assert := assert.New(b)
 
 	for i := 0; i < b.N; i++ {
 		a := new(testStruct)
 
-		fmt.Fprintf(ioutil.Discard, "%+v", a)
+		assert.NotNil(a)
 	}
+}
+
+type testStruct struct {
+	A int  `json:"a"`
+	B bool `json:"b"`
 }
