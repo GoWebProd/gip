@@ -94,16 +94,35 @@ func TestPool(t *testing.T) {
 	}
 }
 
+func BenchmarkCreateDefault(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		x := make([]byte, 128)
+		copy(x, "test")
+	}
+}
+
+func BenchmarkCreateOur(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		x := allocator.Alloc(128)
+		
+		copy(x, "test")
+
+		allocator.Free(x)
+	}
+}
+
 func BenchmarkDefault(b *testing.B) {
 	t := sync.Pool{
 		New: func() interface{} {
-			return make([]byte, 128)
+			x := make([]byte, 128)
+
+			return &x
 		},
 	}
 
 	for i := 0; i < b.N; i++ {
-		x := t.Get().([]byte)
-		copy(x, "test")
+		x := t.Get().(*[]byte)
+		copy(*x, "test")
 		t.Put(x)
 	}
 }
