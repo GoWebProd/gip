@@ -112,7 +112,9 @@ func BenchmarkPool(b *testing.B) {
 	wg := sync.WaitGroup{}
 	pool := sync.Pool{
 		New: func() interface{} {
-			return make([]byte, 4096)
+			x := make([]byte, 4096)
+
+			return &x
 		},
 	}
 
@@ -123,8 +125,8 @@ func BenchmarkPool(b *testing.B) {
 			defer wg.Done()
 
 			for i := 0; i < b.N; i++ {
-				d := pool.Get().([]byte)
-				_ = d[:i%4096]
+				d := pool.Get().(*[]byte)
+				_ = (*d)[:i%4096]
 
 				pool.Put(d)
 			}
