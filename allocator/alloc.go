@@ -10,8 +10,6 @@ import "C"
 import (
 	"reflect"
 	"unsafe"
-
-	"github.com/GoWebProd/gip/rtime"
 )
 
 //go:linkname throw runtime.throw
@@ -64,9 +62,9 @@ func AllocObject[T any]() *T {
 }
 
 func Free(data []byte) {
-	C.free(rtime.Noescape(&data[0]))
+	C.free(unsafe.Pointer(&data[0]))
 }
 
 func FreeObject[T any](o *T) {
-	C.free(rtime.Noescape(o))
+	C.free(unsafe.Pointer(o))
 }

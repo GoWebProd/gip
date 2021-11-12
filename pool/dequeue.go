@@ -22,7 +22,7 @@ const (
 // It has the added feature that it nils out unused slots to avoid
 // unnecessary retention of objects. This is important for sync.Pool,
 // but not typically a property considered in the literature.
-type poolDequeue[T nilable[V], V any] struct {
+type poolDequeue[T any] struct {
 	// headTail packs together a 32-bit head index and a 32-bit
 	// tail index. Both are indexes into vals modulo len(vals)-1.
 	//
@@ -47,15 +47,15 @@ type poolDequeue[T nilable[V], V any] struct {
 	// index has moved beyond it and typ has been set to nil. This
 	// is set to nil atomically by the consumer and read
 	// atomically by the producer.
-	vals []T
+	vals []*T
 }
 
-func (d *poolDequeue[T, V]) pack(head, tail uint32) uint64 {
+func (d *poolDequeue[T]) pack(head, tail uint32) uint64 {
 	const mask = 1<<dequeueBits - 1
 	return (uint64(head) << dequeueBits) | uint64(tail&mask)
 }
 
-func (d *poolDequeue[T, V]) unpack(ptrs uint64) (head, tail uint32) {
+func (d *poolDequeue[T]) unpack(ptrs uint64) (head, tail uint32) {
 	const mask = 1<<dequeueBits - 1
 	head = uint32((ptrs >> dequeueBits) & mask)
 	tail = uint32(ptrs & mask)
@@ -64,7 +64,7 @@ func (d *poolDequeue[T, V]) unpack(ptrs uint64) (head, tail uint32) {
 
 // pushHead adds val at the head of the queue. It returns false if the
 // queue is full. It must only be called by a single producer.
-func (d *poolDequeue[T, V]) pushHead(val T) bool {
+func (d *poolDequeue[T]) pushHead(val *T) bool {
 	ptrs := atomic.LoadUint64(&d.headTail)
 	head, tail := d.unpack(ptrs)
 	if (tail+uint32(len(d.vals)))&(1<<dequeueBits-1) == head {
@@ -91,8 +91,8 @@ func (d *poolDequeue[T, V]) pushHead(val T) bool {
 // popHead removes and returns the element at the head of the queue.
 // It returns false if the queue is empty. It must only be called by a
 // single producer.
-func (d *poolDequeue[T, V]) popHead() (T, bool) {
-	var slot *T
+func (d *poolDequeue[T]) popHead() (*T, bool) {
+	var slot **T
 	for {
 		ptrs := atomic.LoadUint64(&d.headTail)
 		head, tail := d.unpack(ptrs)
@@ -128,8 +128,8 @@ func (d *poolDequeue[T, V]) popHead() (T, bool) {
 // popTail removes and returns the element at the tail of the queue.
 // It returns false if the queue is empty. It may be called by any
 // number of consumers.
-func (d *poolDequeue[T, V]) popTail() (T, bool) {
-	var slot *T
+func (d *poolDequeue[T]) popTail() (*T, bool) {
+	var slot **T
 	for {
 		ptrs := atomic.LoadUint64(&d.headTail)
 		head, tail := d.unpack(ptrs)

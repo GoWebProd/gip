@@ -6,7 +6,7 @@ import (
 )
 
 func TestBuffer(t *testing.T) {
-	buffer := New[*string, string](2)
+	buffer := New[string](2)
 	test1 := "test1"
 	test2 := "test2"
 	test3 := "test3"
@@ -86,7 +86,7 @@ func TestParallel(t *testing.T) {
 	const n = 100
 	const elements = 1000
 
-	queue := New[*int, int](n * elements)
+	queue := New[int](n * elements)
 	wg := sync.WaitGroup{}
 	mu := sync.Mutex{}
 	m := make(map[int]struct{})
@@ -143,7 +143,7 @@ func TestParallel(t *testing.T) {
 }
 
 func BenchmarkNew(b *testing.B) {
-	queue := New[*int, int](10)
+	queue := New[int](10)
 
 	for i := 0; i < b.N; i++ {
 		queue.Put(&i)

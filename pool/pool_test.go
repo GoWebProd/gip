@@ -15,7 +15,7 @@ import (
 
 func TestParallel(t *testing.T) {
 	proc := runtime.GOMAXPROCS(0)
-	p := Pool[[]byte, byte]{}
+	p := Pool[[]byte]{}
 	zeroBytes := make([]byte, 128)
 
 	var (
@@ -35,18 +35,19 @@ func TestParallel(t *testing.T) {
 			for i := 0; i < 10000; i++ {
 				b := p.Get()
 				if b == nil {
-					b = allocator.Alloc(128)
+					b = new([]byte)
+					*b = allocator.Alloc(128)
 				}
 
-				if !bytes.Equal(b, zeroBytes) {
-					t.Errorf("bad value: %v", string((b)[:len(template)]))
+				if !bytes.Equal(*b, zeroBytes) {
+					t.Errorf("bad value: %v", string((*b)[:len(template)]))
 
 					e = true
 				}
 
-				copy(b, []byte(template))
+				copy(*b, []byte(template))
 				time.Sleep(time.Millisecond)
-				copy(b, zeroBytes)
+				copy(*b, zeroBytes)
 				p.Put(b)
 			}
 		}()
@@ -60,34 +61,35 @@ func TestParallel(t *testing.T) {
 }
 
 func TestPool(t *testing.T) {
-	p := Pool[[]byte, byte]{}
+	p := Pool[[]byte]{}
 
 	b1 := p.Get()
 	if b1 != nil {
-		t.Fatalf("bad length: %d", len(b1))
+		t.Fatalf("bad length: %d", len(*b1))
 	}
 
-	b1 = allocator.Alloc(5)
+	b1 = new([]byte)
+	*b1 = allocator.Alloc(5)
 
-	b1[0] = 'h'
-	b1[1] = 'e'
-	b1[2] = 'l'
-	b1[3] = 'l'
-	b1[4] = 'o'
+	(*b1)[0] = 'h'
+	(*b1)[1] = 'e'
+	(*b1)[2] = 'l'
+	(*b1)[3] = 'l'
+	(*b1)[4] = 'o'
 
 	b2 := p.Get()
 	if b2 != nil {
-		t.Fatalf("bad length: %d", len(b2))
+		t.Fatalf("bad length: %d", len(*b2))
 	}
 
 	p.Put(b1)
 
 	b3 := p.Get()
-	if len(b3) != 5 {
-		t.Fatalf("bad length: %d", len(b1))
+	if len(*b3) != 5 {
+		t.Fatalf("bad length: %d", len(*b1))
 	}
 
-	if !bytes.Equal(b1, b3) {
+	if !bytes.Equal(*b1, *b3) {
 		t.Fatalf("b1 != b3: %v != %v", b1, b3)
 	}
 }
@@ -126,15 +128,16 @@ func BenchmarkDefault(b *testing.B) {
 }
 
 func BenchmarkOur(b *testing.B) {
-	t := Pool[[]byte, byte]{}
+	t := Pool[[]byte]{}
 
 	for i := 0; i < b.N; i++ {
 		x := t.Get()
 		if x == nil {
-			x = allocator.Alloc(128)
+			x = new([]byte)
+			*x = allocator.Alloc(128)
 		}
 
-		copy(x, "test")
+		copy(*x, "test")
 		t.Put(x)
 	}
 }

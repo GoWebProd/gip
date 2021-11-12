@@ -12,23 +12,23 @@ import (
 // dequeue fills up, this allocates a new one and only ever pushes to
 // the latest dequeue. Pops happen from the other end of the list and
 // once a dequeue is exhausted, it gets removed from the list.
-type poolChain[T nilable[V], V any] struct {
+type poolChain[T any] struct {
 	// head is the poolDequeue to push to. This is only accessed
 	// by the producer, so doesn't need to be synchronized.
-	head *poolChainElt[T, V]
+	head *poolChainElt[T]
 
 	// tail is the poolDequeue to popTail from. This is accessed
 	// by consumers, so reads and writes must be atomic.
-	tail *poolChainElt[T, V]
+	tail *poolChainElt[T]
 }
 
-func (c *poolChain[T, V]) pushHead(val T) {
+func (c *poolChain[T]) pushHead(val *T) {
 	d := c.head
 	if d == nil {
 		// Initialize the chain.
 		const initSize = 8 // Must be a power of 2
-		d = new(poolChainElt[T, V])
-		d.vals = make([]T, initSize)
+		d = new(poolChainElt[T])
+		d.vals = make([]*T, initSize)
 		c.head = d
 		storePoolChainElt(&c.tail, d)
 	}
@@ -45,14 +45,14 @@ func (c *poolChain[T, V]) pushHead(val T) {
 		newSize = dequeueLimit
 	}
 
-	d2 := &poolChainElt[T, V]{prev: d}
-	d2.vals = make([]T, newSize)
+	d2 := &poolChainElt[T]{prev: d}
+	d2.vals = make([]*T, newSize)
 	c.head = d2
 	storePoolChainElt(&d.next, d2)
 	d2.pushHead(val)
 }
 
-func (c *poolChain[T, V]) popHead() (T, bool) {
+func (c *poolChain[T]) popHead() (*T, bool) {
 	d := c.head
 	for d != nil {
 		if val, ok := d.popHead(); ok {
@@ -65,7 +65,7 @@ func (c *poolChain[T, V]) popHead() (T, bool) {
 	return nil, false
 }
 
-func (c *poolChain[T, V]) popTail() (T, bool) {
+func (c *poolChain[T]) popTail() (*T, bool) {
 	d := loadPoolChainElt(&c.tail)
 	if d == nil {
 		return nil, false

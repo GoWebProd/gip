@@ -15,11 +15,7 @@ const (
 	bufferLimit = (1 << bufferBits) / 4
 )
 
-type nilable[T any] interface {
-	[]T | *T
-}
-
-type Buffer[T nilable[V], V any] struct {
+type Buffer[T any] struct {
 	// headTail packs together a 32-bit head index and a 32-bit
 	// tail index. Both are indexes into vals modulo len(vals)-1.
 	//
@@ -44,21 +40,21 @@ type Buffer[T nilable[V], V any] struct {
 	// index has moved beyond it set to nil. This
 	// is set to nil atomically by the consumer and read
 	// atomically by the producer.
-	vals []T
+	vals []*T
 }
 
-func New[T nilable[V], V any](size int) *Buffer[T, V] {
-	return &Buffer[T, V]{
-		vals: make([]T, size),
+func New[T any](size int) *Buffer[T] {
+	return &Buffer[T]{
+		vals: make([]*T, size),
 	}
 }
 
-func (d *Buffer[T, V]) pack(head, tail uint32) uint64 {
+func (d *Buffer[T]) pack(head, tail uint32) uint64 {
 	const mask = 1<<bufferBits - 1
 	return (uint64(head) << bufferBits) | uint64(tail&mask)
 }
 
-func (d *Buffer[T, V]) unpack(ptrs uint64) (head, tail uint32) {
+func (d *Buffer[T]) unpack(ptrs uint64) (head, tail uint32) {
 	const mask = 1<<bufferBits - 1
 	head = uint32((ptrs >> bufferBits) & mask)
 	tail = uint32(ptrs & mask)
@@ -67,7 +63,7 @@ func (d *Buffer[T, V]) unpack(ptrs uint64) (head, tail uint32) {
 
 // Put adds val at the head of the queue. It returns false if the
 // queue is full. It must only be called by a single producer.
-func (d *Buffer[T, V]) Put(val T) bool {
+func (d *Buffer[T]) Put(val *T) bool {
 	ptrs := atomic.LoadUint64(&d.headTail)
 	head, tail := d.unpack(ptrs)
 	
@@ -92,8 +88,8 @@ func (d *Buffer[T, V]) Put(val T) bool {
 	return true
 }
 
-func (d *Buffer[T, V]) Take() (T, bool) {
-	var slot *T
+func (d *Buffer[T]) Take() (*T, bool) {
+	var slot **T
 	for {
 		ptrs := atomic.LoadUint64(&d.headTail)
 		head, tail := d.unpack(ptrs)
@@ -127,7 +123,7 @@ func (d *Buffer[T, V]) Take() (T, bool) {
 	return val, true
 }
 
-func (d *Buffer[T, V]) Size() int {
+func (d *Buffer[T]) Size() int {
 	ptrs := atomic.LoadUint64(&d.headTail)
 	head, tail := d.unpack(ptrs)
 
