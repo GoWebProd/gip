@@ -5,8 +5,8 @@ import (
 	"unsafe"
 )
 
-type poolChainElt[T any] struct {
-	poolDequeue[T]
+type poolChainElt[T nilable[V], V any] struct {
+	poolDequeue[T, V]
 
 	// next and prev link to the adjacent poolChainElts in this
 	// poolChain.
@@ -18,13 +18,13 @@ type poolChainElt[T any] struct {
 	// prev is written atomically by the consumer and read
 	// atomically by the producer. It only transitions from
 	// non-nil to nil.
-	next, prev *poolChainElt[T]
+	next, prev *poolChainElt[T, V]
 }
 
-func storePoolChainElt[T any](pp **poolChainElt[T], v *poolChainElt[T]) {
+func storePoolChainElt[T nilable[V], V any](pp **poolChainElt[T, V], v *poolChainElt[T, V]) {
 	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(pp)), unsafe.Pointer(v))
 }
 
-func loadPoolChainElt[T any](pp **poolChainElt[T]) *poolChainElt[T] {
-	return (*poolChainElt[T])(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(pp))))
+func loadPoolChainElt[T nilable[V], V any](pp **poolChainElt[T, V]) *poolChainElt[T, V] {
+	return (*poolChainElt[T, V])(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(pp))))
 }

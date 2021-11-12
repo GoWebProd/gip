@@ -11,6 +11,10 @@ import (
 
 var allPoolsMu sync.Mutex
 
+type nilable[T any] interface {
+	[]T | *T
+}
+
 //go:linkname runtime_LoadAcquintptr runtime/internal/atomic.LoadAcquintptr
 func runtime_LoadAcquintptr(ptr *uintptr) uintptr
 
@@ -19,14 +23,14 @@ func runtime_StoreReluintptr(ptr *uintptr, val uintptr) uintptr
 
 type noCopy struct{}
 
-type Pool[T any] struct {
+type Pool[T nilable[V], V any] struct {
 	noCopy noCopy
 
 	local     unsafe.Pointer // local fixed-size per-P pool, actual type is [P]poolLocal
 	localSize uintptr        // size of the local array
 }
 
-func (p *Pool[T]) pin() (*poolLocal[T], int) {
+func (p *Pool[T, V]) pin() (*poolLocal[T, V], int) {
 	pid := rtime.ProcPin()
 	// In pinSlow we store to local and then to localSize, here we load in opposite order.
 	// Since we've disabled preemption, GC cannot happen in between.
@@ -35,12 +39,12 @@ func (p *Pool[T]) pin() (*poolLocal[T], int) {
 	s := runtime_LoadAcquintptr(&p.localSize) // load-acquire
 	l := p.local                              // load-consume
 	if uintptr(pid) < s {
-		return indexLocal[T](l, pid), pid
+		return indexLocal[T, V](l, pid), pid
 	}
 	return p.pinSlow()
 }
 
-func (p *Pool[T]) pinSlow() (*poolLocal[T], int) {
+func (p *Pool[T, V]) pinSlow() (*poolLocal[T, V], int) {
 	// Retry under the mutex.
 	// Can not lock the mutex while pinned.
 	rtime.ProcUnpin()
@@ -53,10 +57,10 @@ func (p *Pool[T]) pinSlow() (*poolLocal[T], int) {
 	l := p.local
 
 	if uintptr(pid) < s {
-		return indexLocal[T](l, pid), pid
+		return indexLocal[T, V](l, pid), pid
 	}
 	size := runtime.GOMAXPROCS(0)
-	local := make([]poolLocal[T], size)
+	local := make([]poolLocal[T, V], size)
 
 	atomic.StorePointer(&p.local, unsafe.Pointer(&local[0])) // store-release
 	runtime_StoreReluintptr(&p.localSize, uintptr(size))     // store-release
@@ -65,7 +69,7 @@ func (p *Pool[T]) pinSlow() (*poolLocal[T], int) {
 }
 
 // Put adds x to the pool.
-func (p *Pool[T]) Put(x *T) {
+func (p *Pool[T, V]) Put(x T) {
 	if x == nil {
 		return
 	}
@@ -90,7 +94,7 @@ func (p *Pool[T]) Put(x *T) {
 //
 // If Get would otherwise return nil and p.New is non-nil, Get returns
 // the result of calling p.New.
-func (p *Pool[T]) Get() *T {
+func (p *Pool[T, V]) Get() T {
 	l, pid := p.pin()
 	x := l.private
 	l.private = nil
@@ -110,14 +114,14 @@ func (p *Pool[T]) Get() *T {
 	return x
 }
 
-func (p *Pool[T]) getSlow(pid int) *T {
+func (p *Pool[T, V]) getSlow(pid int) T {
 	// See the comment in pin regarding ordering of the loads.
 	size := runtime_LoadAcquintptr(&p.localSize) // load-acquire
 	locals := p.local                            // load-consume
 
 	// Try to steal one element from other procs.
 	for i := 0; i < int(size); i++ {
-		l := indexLocal[T](locals, (pid+i+1)%int(size))
+		l := indexLocal[T, V](locals, (pid+i+1)%int(size))
 
 		if x, _ := l.shared.popTail(); x != nil {
 			return x
