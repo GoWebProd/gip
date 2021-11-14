@@ -76,6 +76,10 @@ func (s *Slab) Get(size int) *[]byte {
 }
 
 func (s *Slab) Put(data *[]byte) {
+	if data == nil {
+		return
+	}
+
 	(*data) = (*data)[:cap(*data)]
 	idx := unpack(data)
 
