@@ -100,6 +100,10 @@ func FormatTimestampToDate(timestamp int64) string {
 	return FormatDate(ParseDate(timestamp))
 }
 
+func FormatTimestampToDateTime(timestamp int64) string {
+	return FormatDateTime(ParseDateTime(timestamp))
+}
+
 func FormatDate(year int64, month int64, day int64) string {
 	month += 1
 
@@ -113,6 +117,46 @@ func FormatDate(year int64, month int64, day int64) string {
 		sb.WriteString("0")
 	}
 	sb.WriteString(strconv.Itoa(int(day)))
+
+	return sb.String()
+}
+
+func FormatDateTime(year int64, month int64, day int64, hour int64, minute int64, second int64) string {
+	month++
+
+	sb := strings.Builder{}
+
+	sb.WriteString(strconv.Itoa(int(year)))
+
+	if month < 10 {
+		sb.WriteString("0")
+	}
+
+	sb.WriteString(strconv.Itoa(int(month)))
+
+	if day < 10 {
+		sb.WriteString("0")
+	}
+
+	sb.WriteString(strconv.Itoa(int(day)))
+
+	if hour < 10 {
+		sb.WriteString("0")
+	}
+
+	sb.WriteString(strconv.Itoa(int(hour)))
+
+	if minute < 10 {
+		sb.WriteString("0")
+	}
+
+	sb.WriteString(strconv.Itoa(int(minute)))
+
+	if second < 10 {
+		sb.WriteString("0")
+	}
+
+	sb.WriteString(strconv.Itoa(int(second)))
 
 	return sb.String()
 }
