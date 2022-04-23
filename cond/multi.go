@@ -8,16 +8,6 @@ import (
 	"github.com/GoWebProd/gip/stack"
 )
 
-type mutex struct {
-	key uintptr
-}
-
-//go:linkname lock runtime.lock
-func lock(l *mutex)
-
-//go:linkname unlock runtime.unlock
-func unlock(l *mutex)
-
 type Multi struct {
 	ready   bool
 	waiters stack.MutexStack[unsafe.Pointer]
