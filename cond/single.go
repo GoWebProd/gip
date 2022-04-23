@@ -21,7 +21,7 @@ func (c *Single) park(p1, p2 unsafe.Pointer) bool {
 }
 
 func (c *Single) Wait() {
-	if c.state != nil {
+	if atomic.LoadPointer(&c.state) != nil {
 		return
 	}
 
