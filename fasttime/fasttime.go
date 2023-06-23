@@ -167,7 +167,7 @@ func Now() int64 {
 	if err != nil {
 		return time.Now().Unix()
 	}
-	return tv.Sec
+	return int64(tv.Sec)
 }
 
 func NowNano() int64 {
@@ -176,7 +176,7 @@ func NowNano() int64 {
 	if err != nil {
 		return time.Now().UnixNano()
 	}
-	return tv.Nano()
+	return int64(tv.Nano())
 }
 
 func Round(timestamp int64, period int64) int64 {
