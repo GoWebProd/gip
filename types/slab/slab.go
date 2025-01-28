@@ -7,7 +7,7 @@ import (
 	"unsafe"
 
 	"github.com/GoWebProd/gip/allocator"
-	"github.com/GoWebProd/gip/pool"
+	"github.com/GoWebProd/gip/types/pool"
 )
 
 const (
@@ -19,18 +19,18 @@ const (
 )
 
 type Slab struct {
-	minSize int
-	maxSize int
+	minSize uint32
+	maxSize uint32
 	pools   []pool.Pool[[]byte]
-	sizes   []int
+	sizes   []uint32
 }
 
-func New(min int, max int, growFactor float64) *Slab {
+func New(min uint32, max uint32, growFactor float64) *Slab {
 	s := &Slab{
 		minSize: min,
 		maxSize: max,
 		pools:   make([]pool.Pool[[]byte], 0, 16),
-		sizes:   make([]int, 0, 16),
+		sizes:   make([]uint32, 0, 16),
 	}
 
 	last := 0.0
@@ -41,7 +41,7 @@ func New(min int, max int, growFactor float64) *Slab {
 		}
 
 		s.pools = append(s.pools, pool.Pool[[]byte]{})
-		s.sizes = append(s.sizes, int(i))
+		s.sizes = append(s.sizes, uint32(i))
 		last = i
 
 		if i >= float64(max) {
@@ -52,7 +52,7 @@ func New(min int, max int, growFactor float64) *Slab {
 	return s
 }
 
-func (s *Slab) Get(size int) *[]byte {
+func (s *Slab) Get(size uint32) *[]byte {
 	pool, idx := s.findPool(size)
 	if pool == nil {
 		d := allocator.Alloc(size)
@@ -92,7 +92,7 @@ func (s *Slab) Put(data *[]byte) {
 	s.pools[idx].Put(data)
 }
 
-func (s *Slab) findPool(size int) (*pool.Pool[[]byte], int) {
+func (s *Slab) findPool(size uint32) (*pool.Pool[[]byte], int) {
 	idx := sort.Search(len(s.pools), func(i int) bool {
 		return s.sizes[i] >= size
 	})

@@ -33,8 +33,6 @@ func TestAlloc(t *testing.T) {
 func TestReallocEmpty(t *testing.T) {
 	var data []byte
 
-	data = nil
-
 	Realloc(&data, 1024)
 
 	if len(data) != 0 || cap(data) != 1024 {

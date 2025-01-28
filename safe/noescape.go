@@ -1,4 +1,4 @@
-package rtime
+package safe
 
 import "unsafe"
 
@@ -7,6 +7,7 @@ import "unsafe"
 // output depends on the input.  noescape is inlined and currently
 // compiles down to zero instructions.
 // USE CAREFULLY!
+//
 //go:nosplit
 func Noescape[T any](p *T) unsafe.Pointer {
 	x := uintptr(unsafe.Pointer(p))

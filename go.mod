@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/couchbase/go-slab v0.0.0-20150629231827-1f5f7f282713
+	github.com/ebitengine/purego v0.8.2
 	github.com/stretchr/testify v1.7.0
 )
 

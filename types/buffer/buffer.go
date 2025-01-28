@@ -1,19 +1,10 @@
-package queue
+package buffer
 
 import (
 	"sync/atomic"
 )
 
-const (
-	bufferBits = 32
-
-	// bufferLimit is the maximum size of a Buffer.
-	//
-	// This must be at most (1<<bufferBits)/2 because detecting fullness
-	// depends on wrapping around the ring buffer without wrapping around
-	// the index. We divide by 4 so this fits in an int on 32-bit.
-	bufferLimit = (1 << bufferBits) / 4
-)
+const bufferBits = 32
 
 type Buffer[T any] struct {
 	// headTail packs together a 32-bit head index and a 32-bit
@@ -66,12 +57,12 @@ func (d *Buffer[T]) unpack(ptrs uint64) (head, tail uint32) {
 func (d *Buffer[T]) Put(val *T) bool {
 	ptrs := atomic.LoadUint64(&d.headTail)
 	head, tail := d.unpack(ptrs)
-	
+
 	if (tail+uint32(len(d.vals)))&(1<<bufferBits-1) == head {
 		// Queue is full.
 		return false
 	}
-	
+
 	slot := &d.vals[head&uint32(len(d.vals)-1)]
 	// Check if the head slot has been released by popTail.
 	if *slot != nil {

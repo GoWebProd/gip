@@ -5,7 +5,7 @@ import (
 	"unsafe"
 
 	"github.com/GoWebProd/gip/rtime"
-	"github.com/GoWebProd/gip/stack"
+	"github.com/GoWebProd/gip/types/stack"
 )
 
 type Multi struct {

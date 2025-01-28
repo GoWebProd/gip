@@ -8,7 +8,7 @@ import (
 	"github.com/couchbase/go-slab"
 
 	"github.com/GoWebProd/gip/allocator"
-	"github.com/GoWebProd/gip/pool"
+	"github.com/GoWebProd/gip/types/pool"
 )
 
 func TestMin(t *testing.T) {
@@ -54,7 +54,7 @@ func TestSmallGrowFactor(t *testing.T) {
 	s := New(8, 64, 1.01)
 
 	for i := 0; i < len(s.pools); i++ {
-		if s.sizes[i] != i+8 {
+		if s.sizes[i] != uint32(i+8) {
 			t.Fatalf("bad increments on small grow factor: %+v", &s.pools)
 		}
 	}
@@ -98,7 +98,7 @@ func BenchmarkOur(b *testing.B) {
 			defer wg.Done()
 
 			for i := 0; i < b.N; i++ {
-				d := s.Get(i % 4096)
+				d := s.Get(uint32(i) % 4096)
 
 				s.Put(d)
 			}
@@ -146,7 +146,7 @@ func BenchmarkMalloc(b *testing.B) {
 			defer wg.Done()
 
 			for i := 0; i < b.N; i++ {
-				d := allocator.Alloc(1 + i%4096)
+				d := allocator.Alloc(1 + uint32(i)%4096)
 
 				allocator.Free(d)
 			}
