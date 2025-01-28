@@ -1,4 +1,4 @@
-package types
+package iface
 
 import (
 	"unsafe"
@@ -32,13 +32,13 @@ func SetPointer(i *any, ptr unsafe.Pointer) {
 	iface.ptr = ptr
 }
 
-func UnpackInterface(i any) (unsafe.Pointer, unsafe.Pointer) {
+func Unpack(i any) (unsafe.Pointer, unsafe.Pointer) {
 	iface := (*emptyInterface)(unsafe.Pointer(&i))
 
 	return iface.typ, iface.ptr
 }
 
-func BuildInterface(typ unsafe.Pointer, ptr unsafe.Pointer) any {
+func Build(typ unsafe.Pointer, ptr unsafe.Pointer) any {
 	var i any
 
 	iface := (*emptyInterface)(unsafe.Pointer(&i))
